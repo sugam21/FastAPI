@@ -4,3 +4,6 @@ conda-create:
 
 poetry:
 	poetry install 
+
+run-server:
+	fastapi dev main.py
