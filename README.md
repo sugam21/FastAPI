@@ -5,8 +5,14 @@
 
 ### Create conda environment
 - Type `make conda-install` in your vs-code terminal.
+- Make sure you activate your environment using `conda activate <env>`.
 
 ### Install poetry and dependencies
 - `make poetry`
 Explaination
 - `poetry install`. This will install the dependencies from pyproject.toml using poetry.lock file.
+
+## Run the Server
+```bash
+make run-server
+```
