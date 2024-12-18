@@ -43,9 +43,15 @@ def get_data(sheet_name: str) -> pd.DataFrame | dict:
                 logger.info("Policies sheet imported successfully.")
                 return policies_df
         case _:
-            raise ValueError(
+            logger.error(
                 f"Sheet name not in available sheets. Please provide one from: {availabel_sheets}"
             )
+            return {
+                "status": {
+                    "code": 404,
+                    "message": f"Sheet name not in available sheets. Please provide one from: {availabel_sheets}",
+                }
+            }
 
 
 def save_data(data: pd.DataFrame, sheet_name: str) -> dict:
@@ -68,7 +74,8 @@ def save_data(data: pd.DataFrame, sheet_name: str) -> dict:
                     data.to_excel(writer, sheet_name="Accounts", index=False)
             except PermissionError:
                 return {
-                    "error": "The file is open in another program. Close the file and try again."
+                    "status": 500,
+                    "message": "The file is open in another program. Close the file and try again.",
                 }
             else:
                 logger.info("Data inserted successfully into Accounts sheet.")
@@ -81,7 +88,8 @@ def save_data(data: pd.DataFrame, sheet_name: str) -> dict:
                     data.to_excel(writer, sheet_name="Claims", index=False)
             except PermissionError:
                 return {
-                    "error": "The file is open in another program. Close the file and try again."
+                    "status": 500,
+                    "message": "The file is open in another program. Close the file and try again.",
                 }
             else:
                 logger.info("Data inserted successfully into Claims sheet.")
@@ -94,15 +102,20 @@ def save_data(data: pd.DataFrame, sheet_name: str) -> dict:
                     data.to_excel(writer, sheet_name="Policies", index=False)
             except PermissionError:
                 return {
-                    "error": "The file is open in another program. Close the file and try again."
+                    "status": 500,
+                    "message": "The file is open in another program. Close the file and try again.",
                 }
             else:
                 logger.info("Data inserted successfully into Policies sheet.")
                 return {"status": 200, "message": "success"}
         case _:
-            raise ValueError(
+            logger.error(
                 f"Sheet name not in available sheets. Please provide one from: {availabel_sheets}"
             )
+            return {
+                "status": 500,
+                "message": f"Sheet name not in available sheets. Please provide one from: {availabel_sheets}",
+            }
 
 
 def get_merged_data():
