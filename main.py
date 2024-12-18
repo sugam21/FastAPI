@@ -10,6 +10,7 @@ from loguru import logger
 from pydantic import BaseModel
 
 from data import get_data, get_merged_data, save_data
+from log import Log
 
 app = FastAPI()
 
@@ -22,7 +23,7 @@ class Customer(BaseModel):
     Pincode: float | int | None = None
 
 
-class Claims(BaseModel):
+class Claim(BaseModel):
     HAN: str | None = None
     BillAmount: float | int | None = None
     Status: str | None = None
@@ -101,8 +102,8 @@ async def add_new_customer(customer: Customer) -> dict:
     return result
 
 
-@app.post("/claims")
-async def add_new_claims(claim: Claims):
+@app.post("/claim")
+async def add_new_claims(claim: Claim):
     id: str = uuid4().hex
     created_date: str = str(datetime.datetime.now())
     case_number: str = (uuid4().hex[:10]).upper()
@@ -157,7 +158,7 @@ async def add_new_policy(policy: Policy):
 
     new_policy_dict: dict[str, any] = {
         "HAN": policy.HAN,
-        "Policy Name": policy.PoliyName,
+        "Policy Name": policy.PolicyName,
     }
 
     policies_df.loc[len(policies_df)] = new_policy_dict
@@ -178,7 +179,7 @@ def delete_accounts(account_id: str):
     return result
 
 
-@app.delete("/claims/{claim_id}")
+@app.delete("/claim/{claim_id}")
 def delete_claims(claim_id: str):
     claims_df: pd.DataFrame = get_data(sheet_name="Claims")
 
@@ -210,19 +211,114 @@ async def update_account(account_id: str, customer: Customer):
     if not any(accounts_df["AccountId"].to_numpy() == account_id):
         return {"error": "Account Not Found."}
 
+    log_file = Log()
+
     try:
         idx = (accounts_df["AccountId"].to_numpy() == account_id).argmax()
-        stored_item_data = (accounts_df.iloc[idx, :]).to_dict()
-        logger.debug(stored_item_data)
-        stored_item_model = Customer(**stored_item_data)
-        updated_data = stored_item_model.model_dump(
-            exclude_unset=True, exclude_defaults=True
-        )
-        logger.debug(updated_data)
-        updated_item = stored_item_model.model_copy(updated_data)
-        logger.debug(updated_item)
-        accounts_df.iloc[idx, :] = updated_item
-        return updated_item
+        row_to_modify = accounts_df.iloc[idx, :]
 
+        for col, new_value in customer.model_dump().items():
+            if new_value != "string" and new_value != 0:
+                old_val = row_to_modify[col]
+                row_to_modify[col] = new_value
+                accounts_df[idx] = row_to_modify
+                result = save_data(accounts_df, sheet_name="Accounts")
+                if result["status"] == 500:
+                    return result
+
+                log_file.write_log(
+                    sheet_name="Accounts",
+                    id=account_id,
+                    column_name=col,
+                    old_value=old_val,
+                    new_value=new_value,
+                )
     except Exception as e:
-        logger.debug(e)
+        logger.error(f"Error:  {e}")
+    else:
+        logger.info("Accounts sheet modified successfully")
+        return {"status": 200, "message": "success"}
+
+
+@app.put("/policy/{han_number}")
+async def update_policy(han_number: str, policy: Policy):
+    policies_df: pd.DataFrame = get_data(sheet_name="Policies")
+
+    if not any(policies_df["HAN"].to_numpy() == han_number):
+        return {"error": "Policy not found."}
+
+    log_file = Log()
+    flag: bool = True
+
+    try:
+        idx = (policies_df["HAN"].to_numpy() == han_number).argmax()
+        row_to_modify = policies_df.iloc[idx, :]
+
+        for col, new_value in policy.model_dump().items():
+            if col == "PolicyName":
+                col = "Policy Name"
+            if new_value != "string" and new_value != 0:
+                flag = False
+                old_val = row_to_modify[col]
+                row_to_modify[col] = new_value
+                policies_df[idx] = row_to_modify
+                result = save_data(policies_df, sheet_name="Policies")
+                if result["status"] == 500:
+                    return result
+
+                log_file.write_log(
+                    sheet_name="Policies",
+                    id=han_number,
+                    column_name=col,
+                    old_value=old_val,
+                    new_value=new_value,
+                )
+    except Exception as e:
+        logger.error(f"Error:  {e}")
+    else:
+        if flag:
+            return {"message": "Nothing to modify"}
+        else:
+            logger.info("Policies sheet modified successfully")
+            return {"status": 200, "message": "success"}
+
+
+@app.put("/claim/{claim_id}")
+async def update_claim(claim_id: str, claim: Claim):
+    claims_df: pd.DataFrame = get_data(sheet_name="Claims")
+
+    if not any(claims_df["Id"].to_numpy() == claim_id):
+        return {"error": "Claim not found."}
+
+    log_file = Log()
+    flag: bool = True
+
+    try:
+        idx = (claims_df["Id"].to_numpy() == claim_id).argmax()
+        row_to_modify = claims_df.iloc[idx, :]
+
+        for col, new_value in claim.model_dump().items():
+            if new_value != "string" and new_value != 0:
+                flag = False
+                old_val = row_to_modify[col]
+                row_to_modify[col] = new_value
+                claims_df[idx] = row_to_modify
+                result = save_data(claims_df, sheet_name="Claims")
+                if result["status"] == 500:
+                    return result
+
+                log_file.write_log(
+                    sheet_name="Claims",
+                    id=claim_id,
+                    column_name=col,
+                    old_value=old_val,
+                    new_value=new_value,
+                )
+    except Exception as e:
+        logger.error(f"Error:  {e}")
+    else:
+        if flag:
+            return {"message": "Nothing to modify"}
+        else:
+            logger.info("Claims sheet modified successfully")
+            return {"status": 200, "message": "success"}
