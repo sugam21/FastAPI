@@ -75,3 +75,22 @@ WHERE Id = "987654321";
 UPDATE bfhl.account
 SET Name = "John"
 WHERE AccountId = "1234567";
+
+-- ** II. Modify a Record of Policies table
+UPDATE bfhl.policies
+SET `Policy Name` = "another test policy"
+WHERE HAN="12345678"
+
+--check
+SELECT * FROM bfhl.policies where han="12345678" limit 1;
+
+-- ** III. Modify a Record of Claims table
+UPDATE bfhl.claims
+SET BillAmount=999
+WHERE Id="987654321"
+
+--check
+SELECT * FROM bfhl.claims WHERE Id="987654321" LIMIT 1;
+
+
+-- To Track Changes being made in the table, we need to create triggers
