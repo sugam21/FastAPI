@@ -1,6 +1,7 @@
 import datetime
 from uuid import uuid4
 
+import indiapins
 import numpy as np
 import pandas as pd
 from cache_pandas import timed_lru_cache
@@ -8,29 +9,29 @@ from fastapi import FastAPI
 from loguru import logger
 from pydantic import BaseModel
 
-from .data import get_data, get_merged_data, save_data
+from data import get_data, get_merged_data, save_data
 
 app = FastAPI()
 
 
 class Customer(BaseModel):
-    name: str
-    age: int
-    city: str
-    state: str
-    pincode: float | int
+    Name: str | None = None
+    Age: int | None = None
+    City: str | None = None
+    State: str | None = None
+    Pincode: float | int | None = None
 
 
 class Claims(BaseModel):
-    han: str
-    bill_amount: float | int
-    status: str
-    account_id: str
+    HAN: str | None = None
+    BillAmount: float | int | None = None
+    Status: str | None = None
+    AccountId: str | None = None
 
 
 class Policy(BaseModel):
-    han: str
-    policy_name: str
+    HAN: str | None = None
+    PolicyName: str | None = None
 
 
 @app.get("/account/{account_id}")
@@ -70,12 +71,17 @@ def get_customer_info(account_id: str) -> list[dict] | dict:
 @app.post("/account/")
 async def add_new_customer(customer: Customer) -> dict:
     account_id: str = uuid4().hex
-    customer_name = customer.name.capitalize()
-    city = customer.city.capitalize()
-    state = customer.state.capitalize()
+    customer_name = customer.Name.capitalize()
+    city = customer.City.capitalize()
+    state = customer.State.capitalize()
 
-    if customer.age <= 0:
+    if customer.Age <= 0:
         return {"error": "Invalid Age. Cannot be less than or equal to 0."}
+
+    try:
+        indiapins.isvalid(str(customer.Pincode))
+    except ValueError:
+        return {"error": "Invalid Pincode. Must be in the format ######"}
 
     accounts_df: pd.DataFrame = get_data(sheet_name="Accounts")
 
@@ -85,10 +91,10 @@ async def add_new_customer(customer: Customer) -> dict:
     new_user_info_dict = {
         "AccountId": account_id,
         "Name": customer_name,
-        "Age": customer.age,
+        "Age": customer.Age,
         "City": city,
         "State": state,
-        "Pincode": customer.pincode,
+        "Pincode": customer.Pincode,
     }
     accounts_df.loc[len(accounts_df)] = new_user_info_dict
     result = save_data(accounts_df, sheet_name="Accounts")
@@ -105,25 +111,25 @@ async def add_new_claims(claim: Claims):
     accounts_df: pd.DataFrame = get_data(sheet_name="Accounts")
     claims_df: pd.DataFrame = get_data(sheet_name="Claims")
 
-    if (policies_df.to_numpy()[policies_df["HAN"].to_numpy() == claim.han]).size == 0:
+    if (policies_df.to_numpy()[policies_df["HAN"].to_numpy() == claim.HAN]).size == 0:
         return {"error": "Invalid HAN number."}
     if (
-        accounts_df.to_numpy()[accounts_df["AccountId"].to_numpy() == claim.account_id]
+        accounts_df.to_numpy()[accounts_df["AccountId"].to_numpy() == claim.AccountId]
     ).size == 0:
         return {"error": "Account is not registered."}
-    if claim.status not in ["Paid", "Not Paid"]:
+    if claim.Status not in ["Paid", "Not Paid"]:
         return {"error": "Status value not valid. Options[Paid, Not Paid]"}
-    if claim.bill_amount < 0:
+    if claim.BillAmount < 0:
         return {"error": "Invalid bill amount. Bill amount cannot be less than 0."}
 
     new_claim_dict: dict[str, any] = {
         "Id": id,
         "CreatedDate": created_date,
         "CaseNumber": case_number,
-        "HAN": claim.han,
-        "BillAmount": claim.bill_amount,
-        "Status": claim.status,
-        "AccountId": claim.account_id,
+        "HAN": claim.HAN,
+        "BillAmount": claim.BillAmount,
+        "Status": claim.Status,
+        "AccountId": claim.AccountId,
     }
     logger.debug(new_claim_dict)
 
@@ -137,21 +143,21 @@ async def add_new_policy(policy: Policy):
 
     policies_df: pd.DataFrame = get_data(sheet_name="Policies")
 
-    if (policies_df.to_numpy()[policies_df["HAN"].to_numpy() == policy.han]).size > 0:
+    if (policies_df.to_numpy()[policies_df["HAN"].to_numpy() == policy.HAN]).size > 0:
         return {"error": "HAN number already exists."}
     if (
         policies_df.to_numpy()[
-            policies_df["Policy Name"].to_numpy() == policy.policy_name
+            policies_df["Policy Name"].to_numpy() == policy.PolicyName
         ]
     ).size > 0:
         return {"error": "Policy Name already exists."}
 
-    if policy.han.strip(" ") == "" or policy.policy_name.strip(" ") == "":
+    if policy.HAN.strip(" ") == "" or policy.PolicyName.strip(" ") == "":
         return {"error": "Empty HAN or Policy Name"}
 
     new_policy_dict: dict[str, any] = {
-        "HAN": policy.han,
-        "Policy Name": policy.policy_name,
+        "HAN": policy.HAN,
+        "Policy Name": policy.PoliyName,
     }
 
     policies_df.loc[len(policies_df)] = new_policy_dict
@@ -196,3 +202,27 @@ def delete_poicy(han_number: str):
     policies_df.drop(idx, inplace=True)
     result = save_data(policies_df, sheet_name="Policies")
     return result
+
+
+@app.put("/account/{account_id}")
+async def update_account(account_id: str, customer: Customer):
+    accounts_df: pd.DataFrame = get_data(sheet_name="Accounts")
+    if not any(accounts_df["AccountId"].to_numpy() == account_id):
+        return {"error": "Account Not Found."}
+
+    try:
+        idx = (accounts_df["AccountId"].to_numpy() == account_id).argmax()
+        stored_item_data = (accounts_df.iloc[idx, :]).to_dict()
+        logger.debug(stored_item_data)
+        stored_item_model = Customer(**stored_item_data)
+        updated_data = stored_item_model.model_dump(
+            exclude_unset=True, exclude_defaults=True
+        )
+        logger.debug(updated_data)
+        updated_item = stored_item_model.model_copy(updated_data)
+        logger.debug(updated_item)
+        accounts_df.iloc[idx, :] = updated_item
+        return updated_item
+
+    except Exception as e:
+        logger.debug(e)

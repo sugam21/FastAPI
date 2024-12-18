@@ -1,7 +1,7 @@
 import pandas as pd
 from loguru import logger
 
-from .path import CLEAN_DATA_PATH
+from path import CLEAN_DATA_PATH
 
 
 def get_data(sheet_name: str) -> pd.DataFrame | dict:
