@@ -3,6 +3,7 @@
 
 data
 .env
+test.*
 
 # Python
 __pycache__
