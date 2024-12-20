@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from cache_pandas import timed_lru_cache
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 from pydantic import BaseModel
 
@@ -13,6 +14,14 @@ from data import get_data, get_merged_data, save_data
 from log import Log
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_method=["*"],
+    allow_headers=["*"],
+)
 
 
 class Customer(BaseModel):
@@ -321,4 +330,5 @@ async def update_claim(claim_id: str, claim: Claim):
             return {"message": "Nothing to modify"}
         else:
             logger.info("Claims sheet modified successfully")
+            return {"status": 200, "message": "success"}
             return {"status": 200, "message": "success"}
