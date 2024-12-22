@@ -1,7 +1,6 @@
 # Editors
 .vscode
 
-data
 .env
 test.*
 
