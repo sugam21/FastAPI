@@ -14,7 +14,7 @@ FROM(
     SELECT 
         a.AccountId, a.Name, a.Age, a.City, a.State, a.Pincode,
         c.Id, c.CreatedDate, c.CaseNumber, c.HAN, c.BillAmount, c.Status
-    FROM bfhl.account as a
+    FROM bfhl.accounts as a
     LEFT JOIN bfhl.claims as c
     ON a.AccountId = c.AccountId) as t
 LEFT JOIN bfhl.policies as p
@@ -28,11 +28,11 @@ WHERE t.AccountId = "0012j00000GjoGnAAJ";
 -- ---------------------
 
 -- ** I. Insert a Record into Accounts table
-INSERT INTO bfhl.account (AccountId, Name, Age, City, State, Pincode)
+INSERT INTO bfhl.accounts (AccountId, Name, Age, City, State, Pincode)
 Values ("1234567","Sugam", 21, "Pune", "Maharashtra", 412115)
 
 --check
-SELECT * FROM bfhl.account WHERE AccountId="1234567"
+SELECT * FROM bfhl.accounts WHERE AccountId="1234567"
 
 -- ** II. Insert a Record into Policies table
 INSERT INTO bfhl.policies (HAN, `Policy Name`)
@@ -53,7 +53,7 @@ SELECT * FROM bfhl.claims WHERE Id="987654321" LIMIT 1;
 -- ---------------------
 
 -- ** I. Delete a Record from Accounts table
-DELETE FROM bfhl.account as a
+DELETE FROM bfhl.accounts as a
 WHERE a.AccountId = "1234567";
 
 
@@ -72,7 +72,7 @@ WHERE Id = "987654321";
 -- ---------------------
 
 -- ** I. Modify a Record of Accounts table
-UPDATE bfhl.account
+UPDATE bfhl.accounts
 SET Name = "John"
 WHERE AccountId = "1234567";
 

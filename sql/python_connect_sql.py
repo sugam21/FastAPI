@@ -29,7 +29,7 @@ def main() -> None:
                         (SELECT 
                             a.AccountId, a.Name, a.Age, a.City, a.State, a.Pincode,
                             c.Id, c.CreatedDate, c.CaseNumber, c.HAN, c.BillAmount, c.Status
-                        FROM account as a
+                        FROM accounts as a
                         LEFT JOIN claims as c
                         ON a.AccountId = c.AccountId) as t
                         LEFT JOIN bfhl.policies as p
