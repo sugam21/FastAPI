@@ -19,7 +19,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
-    allow_method=["*"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
@@ -224,13 +224,13 @@ async def update_account(account_id: str, customer: Customer):
 
     try:
         idx = (accounts_df["AccountId"].to_numpy() == account_id).argmax()
-        row_to_modify = accounts_df.iloc[idx, :]
+        row_to_modify = (accounts_df.iloc[idx, :]).copy()
 
         for col, new_value in customer.model_dump().items():
             if new_value != "string" and new_value != 0:
                 old_val = row_to_modify[col]
                 row_to_modify[col] = new_value
-                accounts_df[idx] = row_to_modify
+                accounts_df.iloc[idx, :] = row_to_modify
                 result = save_data(accounts_df, sheet_name="Accounts")
                 if result["status"] == 500:
                     return result
