@@ -3,6 +3,7 @@
 
 .env
 test.*
+*.csv
 
 # Python
 __pycache__
