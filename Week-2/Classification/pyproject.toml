@@ -1,0 +1,21 @@
+[project]
+name = "classification"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi[standard]>=0.115.6",
+    "feast>=0.42.0",
+    "loguru>=0.7.3",
+    "mysql-connector-python>=9.1.0",
+    "pandas>=2.2.3",
+    "python-dotenv>=1.0.1",
+    "scikit-learn>=1.6.0",
+    "seaborn>=0.13.2",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.29.5",
+]
