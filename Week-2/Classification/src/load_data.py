@@ -78,7 +78,7 @@ class DataIngestorFactory:
 
         if file_extension not in ["db", ".csv", ".zip"]:
             logger.error("File extension not supported.")
-            return None
+            raise ValueError("File extension not supported.")
 
         match file_extension:
             case "db":
