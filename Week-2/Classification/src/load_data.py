@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 import mysql.connector
 import pandas as pd
 from loguru import logger
+from dotenv import load_dotenv
+load_dotenv()
 
 
 class DataIngestor(ABC):
@@ -88,6 +90,7 @@ class DataIngestorFactory:
 if __name__ == "__main__":
     data_ingestor = DataIngestorFactory().get_data_ingestor(file_extension="db")
     table_name = "diabetes"
+    logger.debug(os.getenv("MYSQL_DATABASE"))
     if data_ingestor:
         df: pd.DataFrame | None = data_ingestor.ingest(
             db_name=os.getenv("MYSQL_DATABASE"),
