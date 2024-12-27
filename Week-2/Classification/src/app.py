@@ -33,6 +33,7 @@ class Diabetes(BaseModel):
     )
     @classmethod
     def non_negative(cls, value: int | float, field):
+        """Checks for non negative values."""
         if value < 0:
             raise ValueError(f"{field.field_name} cannot be negative")
         return value
@@ -49,6 +50,7 @@ class Diabetes(BaseModel):
     )
     @classmethod
     def non_zero(cls, value: int | float, field):
+        """Checks for non zero values."""
         if value == 0:
             raise ValueError(f"{field.field_name} must be greater than 0")
         return value
@@ -77,6 +79,7 @@ async def choose_model(model_name: ModelName):
 
 @app.post("/predict")
 async def get_prediction(patient_info: Diabetes) -> Response:
+    """Returns the predicted response."""
     global selected_model
     global selected_model_name
     # Check if model is selected or not.

@@ -6,6 +6,7 @@ from .path import path
 
 
 def load_model(model_name: str = "LGBM"):
+    """Loads the given model into memory."""
     match model_name:
         case "Logistic Regression":
             try:
