@@ -1,1 +1,2 @@
-from load_data import *
+from .app import *
+from .load_data import *
